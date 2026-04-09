@@ -1,0 +1,204 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>МОДО — Вариант №2: Математическая грамотность</title>
+    
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --accent: #3b82f6;
+            --bg: #f8fafc;
+            --text: #1e293b;
+            --white: #ffffff;
+            --correct: #22c55e;
+            --wrong: #ef4444;
+            --hint-bg: #fefce8;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            color: var(--text);
+            padding-bottom: 60px;
+        }
+
+        .app-bar {
+            background: var(--primary);
+            color: white;
+            padding: 16px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .container { flex: 1; padding: 15px; max-width: 500px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+
+        .card { background: var(--white); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+
+        .question-text { font-size: 1.15rem; font-weight: 700; margin-bottom: 20px; line-height: 1.4; color: #0f172a; }
+
+        .option {
+            border: 2px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 10px;
+            cursor: pointer; transition: 0.2s; display: flex; align-items: center; background: #fff;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .option.selected { border-color: var(--accent); background-color: #eff6ff; }
+        
+        .option.is-correct { border-color: var(--correct) !important; background-color: #f0fdf4 !important; color: #166534; font-weight: 700; }
+        .option.is-wrong { border-color: var(--wrong) !important; background-color: #fef2f2 !important; color: #991b1b; }
+
+        .hint-box {
+            display: none; background: var(--hint-bg); border-left: 4px solid #facc15;
+            padding: 12px; border-radius: 4px; margin-top: 15px; font-size: 0.9rem; color: #854d0e;
+        }
+
+        .main-btn {
+            background: var(--primary); color: white; border: none; padding: 16px;
+            border-radius: 10px; font-size: 1.1rem; font-weight: 700; width: 100%; cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .main-btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+        .footer-brand {
+            position: fixed; bottom: 0; left: 0; width: 100%; background: #fff;
+            color: #94a3b8; text-align: center; padding: 10px 0; font-size: 0.85rem;
+            border-top: 1px solid #e2e8f0; z-index: 1000;
+        }
+
+        #result-screen { display: none; text-align: center; }
+        .score-val { font-size: 4rem; color: var(--primary); font-weight: 900; }
+    </style>
+</head>
+<body>
+
+<div class="app-bar">
+    <div style="font-size: 1.1rem; font-weight: 800; letter-spacing: 0.5px;">МОДО — ВАРИАНТ №2</div>
+    <div style="font-size: 0.8rem; opacity: 0.9;">Математическая грамотность • 9 класс</div>
+</div>
+
+<div class="container">
+    <div id="quiz-screen">
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-weight:600; color: #64748b; font-size:0.85rem;">
+            <span>Задание <span id="curr-num">1</span> из 20</span>
+            <span id="perc">0%</span>
+        </div>
+        <div class="card">
+            <div id="q-text" class="question-text">Загрузка...</div>
+            <div id="opt-cont"></div>
+            <div id="hint-text" class="hint-box"></div>
+        </div>
+        <button id="action-btn" class="main-btn" onclick="handleAction()" disabled>Ответить</button>
+    </div>
+
+    <div id="result-screen" class="card">
+        <h2 style="color: var(--primary); margin-top: 0;">Тестирование завершено</h2>
+        <div class="score-val" id="f-score">0</div>
+        <p style="color: #64748b; font-weight: 600;">верных ответов из 20 баллов</p>
+        <button class="main-btn" onclick="location.reload()" style="background:var(--accent); margin-top: 20px;">Пройти заново</button>
+    </div>
+</div>
+
+<div class="footer-brand">@𝔐𝔞𝔱𝔥𝔢𝔪𝔞𝔓𝔯𝔬©</div>
+
+<script>
+    const questions = [
+        { q: "Цена товара сначала выросла на 20%, а затем снизилась на 20%. Как изменилась первоначальная цена?", a: ["Не изменилась", "Выросла на 4%", "Снизилась на 4%", "Снизилась на 2%"], c: 2, h: "<b>Подсказка:</b> Пусть цена 100. После роста: \\(100 + 20 = 120\\). Снижение на 20% от 120: \\(120 - 24 = 96\\). Итог: снижение на 4%." },
+        { q: "В корзине 5 белых и 7 черных шаров. Какова вероятность того, что наугад вытянутый шар окажется белым?", a: ["5/7", "7/12", "5/12", "1/2"], c: 2, h: "<b>Подсказка:</b> Вероятность \\(P = \\frac{m}{n}\\), где \\(m\\) — нужные исходы (5), \\(n\\) — все исходы (5+7=12)." },
+        { q: "Найдите значение числового выражения: \\(4^3 \\cdot 2^{-4}\\).", a: ["2", "4", "8", "16"], c: 1, h: "<b>Подсказка:</b> Приведите к одному основанию: \\((2^2)^3 \\cdot 2^{-4} = 2^6 \\cdot 2^{-4} = 2^{6-4} = 2^2 = 4\\)." },
+        { q: "Две трубы наполняют бассейн за 6 часов. Первая труба может наполнить его за 10 часов. За сколько часов наполнит бассейн вторая труба, работая отдельно?", a: ["12 ч", "15 ч", "16 ч", "18 ч"], c: 1, h: "<b>Подсказка:</b> \\(\\frac{1}{x} = \\frac{1}{6} - \\frac{1}{10} = \\frac{5-3}{30} = \\frac{2}{30} = \\frac{1}{15}\\)." },
+        { q: "Чему равна сумма всех двузначных чисел, кратных 11?", a: ["450", "495", "505", "550"], c: 1, h: "<b>Подсказка:</b> Числа: 11, 22, ..., 99. Это арифм. прогрессия: \\(S_9 = \\frac{11+99}{2} \\cdot 9 = 55 \\cdot 9 = 495\\)." },
+        { q: "Радиус шара увеличили в 2 раза. Во сколько раз увеличился объем шара?", a: ["в 2 раза", "в 4 раза", "в 8 раз", "в 16 раз"], c: 2, h: "<b>Подсказка:</b> Объем пропорционален кубу радиуса (\\(R^3\\)). \\(2^3 = 8\\)." },
+        { q: "Найдите значение выражения: \\(\\log_2 32 - \\log_3 27\\).", a: ["2", "3", "5", "8"], c: 0, h: "<b>Подсказка:</b> \\(\\log_2 32 = 5\\) (так как \\(2^5=32\\)), \\(\\log_3 27 = 3\\) (так как \\(3^3=27\\)). \\(5 - 3 = 2\\)." },
+        { q: "Найдите площадь круга, если его длина окружности равна \\(10\\pi\\) см.", a: ["\\(25\\pi\\) см²", "\\(50\\pi\\) см²", "\\(100\\pi\\) см²", "\\(5\\pi\\) см²"], c: 0, h: "<b>Подсказка:</b> \\(L = 2\\pi R = 10\\pi \\Rightarrow R = 5\\). Площадь \\(S = \\pi R^2 = 25\\pi\\)." },
+        { q: "Автомобиль проехал 120 км со скоростью 60 км/ч, а затем еще 120 км со скоростью 40 км/ч. Найдите среднюю скорость на всем пути.", a: ["50 км/ч", "48 км/ч", "52 км/ч", "45 км/ч"], c: 1, h: "<b>Подсказка:</b> \\(V_{ср} = \\frac{S_{общ}}{t_{общ}} = \\frac{240}{2+3} = \\frac{240}{5} = 48\\)." },
+        { q: "Сколько различных трехзначных чисел можно составить из цифр 1, 2, 3 (без повторений)?", a: ["3", "6", "9", "27"], c: 1, h: "<b>Подсказка:</b> Это перестановки: \\(P_3 = 3! = 3 \\cdot 2 \\cdot 1 = 6\\)." },
+        { q: "Решите систему уравнений и найдите значение \\(x + y\\): \\(\\begin{cases} x + y = 10 \\\\ x - y = 4 \\end{cases}\\)", a: ["14", "10", "7", "4"], c: 1, h: "<b>Подсказка:</b> Значение суммы \\(x + y\\) уже дано в первом уравнении системы." },
+        { q: "Укажите область определения функции \\(y = \\sqrt{x - 4}\\).", a: ["\\(x < 4\\)", "\\(x > 4\\)", "\\(x \\ge 4\\)", "\\(x \\le 4\\)"], c: 2, h: "<b>Подсказка:</b> Выражение под корнем должно быть неотрицательным: \\(x - 4 \\ge 0 \\Rightarrow x \\ge 4\\)." },
+        { q: "Чему равна сумма корней уравнения \\(x^2 - 7x + 10 = 0\\)?", a: ["-7", "7", "10", "-10"], c: 1, h: "<b>Подсказка:</b> По теореме Виета сумма корней \\(x_1 + x_2 = -b = 7\\)." },
+        { q: "В треугольнике ABC: \\(AB=BC\\), \\(\\angle B = 80^\\circ\\). Найдите угол \\(A\\).", a: ["50°", "80°", "100°", "40°"], c: 0, h: "<b>Подсказка:</b> Треугольник равнобедренный, значит \\(\\angle A = \\angle C\\). \\((180 - 80) : 2 = 50^\\circ\\)." },
+        { q: "Найдите 20% от числа, если 15% от него равны 45.", a: ["60", "75", "90", "100"], c: 0, h: "<b>Подсказка:</b> Число: \\(45 / 0,15 = 300\\). Вычисляем 20%: \\(300 \\cdot 0,2 = 60\\)." },
+        { q: "Вычислите: \\(2 \\sin 30^\\circ + \\text{tg } 45^\\circ\\).", a: ["1", "2", "3", "1,5"], c: 1, h: "<b>Подсказка:</b> \\(\\sin 30^\circ = 0,5\\), \\(\\text{tg } 45^\circ = 1\\). Итого: \\(2 \\cdot 0,5 + 1 = 1 + 1 = 2\\)." },
+        { q: "Длина прямоугольника 12 см, а диагональ 13 см. Найдите ширину.", a: ["1 см", "5 см", "7 см", "10 см"], c: 1, h: "<b>Подсказка:</b> Пифагорова тройка: \\(13^2 - 12^2 = 169 - 144 = 25\\). Ширина \\(\\sqrt{25}=5\\)." },
+        { q: "Какое из чисел является иррациональным?", a: ["\\(\\sqrt{16}\\)", "0,25", "\\(\\pi\\)", "2/3"], c: 2, h: "<b>Подсказка:</b> Иррациональное число нельзя представить в виде дроби. Число \\(\\pi\\) — бесконечная непериодическая дробь." },
+        { q: "Сумма углов выпуклого пятиугольника равна:", a: ["360°", "540°", "720°", "900°"], c: 1, h: "<b>Подсказка:</b> Формула суммы углов: \\(180^\\circ \\cdot (n - 2)\\). Для пятиугольника: \\(180 \\cdot 3 = 540^\\circ\\)." },
+        { q: "Расстояние на карте между городами 5 см. Масштаб 1 : 2 000 000. Какое расстояние между ними в реальности?", a: ["10 км", "100 км", "1000 км", "200 км"], c: 1, h: "<b>Подсказка:</b> \\(5 \\cdot 2\\,000\\,000 = 10\\,000\\,000\\) см = \\(100\\,000\\) м = 100 км." }
+    ];
+
+    let curr = 0, score = 0, sel = null, checked = false;
+
+    function render() {
+        sel = null; checked = false;
+        document.getElementById('action-btn').disabled = true;
+        document.getElementById('action-btn').innerText = "Ответить";
+        document.getElementById('hint-text').style.display = 'none';
+        
+        const q = questions[curr];
+        document.getElementById('curr-num').innerText = curr + 1;
+        document.getElementById('perc').innerText = Math.round((curr/20)*100) + '%';
+        document.getElementById('q-text').innerHTML = q.q;
+        document.getElementById('hint-text').innerHTML = q.h;
+        
+        const cont = document.getElementById('opt-cont'); 
+        cont.innerHTML = '';
+        q.a.forEach((t, i) => {
+            const d = document.createElement('div');
+            d.className = 'option';
+            d.innerHTML = `<b style="margin-right:12px; color:var(--primary); font-size:1.1rem;">${String.fromCharCode(65+i)}</b> ${t}`;
+            d.onclick = () => { if (!checked) selectOption(i, d); };
+            cont.appendChild(d);
+        });
+        if (window.MathJax) MathJax.typesetPromise();
+    }
+
+    function selectOption(index, el) {
+        sel = index;
+        document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+        el.classList.add('selected');
+        document.getElementById('action-btn').disabled = false;
+    }
+
+    function handleAction() {
+        if (!checked) {
+            checked = true;
+            const q = questions[curr];
+            const options = document.querySelectorAll('.option');
+            
+            options[q.c].classList.add('is-correct'); 
+            
+            if (sel === q.c) {
+                score++;
+                document.getElementById('hint-text').style.display = 'none';
+            } else {
+                options[sel].classList.add('is-wrong');
+                document.getElementById('hint-text').style.display = 'block';
+                if (window.MathJax) MathJax.typesetPromise([document.getElementById('hint-text')]);
+            }
+            
+            document.getElementById('action-btn').innerText = (curr < 19) ? "Далее" : "Результат теста";
+        } else {
+            curr++;
+            if (curr < 20) render();
+            else showResult();
+        }
+    }
+
+    function showResult() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('f-score').innerText = score;
+    }
+
+    render();
+</script>
+</body>
+</html>

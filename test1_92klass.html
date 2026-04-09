@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест МОДО: Математическая грамотность</title>
+    
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['\\(', '\\)']],
+                displayMath: [['\\[', '\\]']]
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; max-width: 850px; margin: 0 auto; padding: 20px; background-color: #f4f7f9; color: #333; }
+        .quiz-container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        h1 { color: #1a73e8; text-align: center; border-bottom: 2px solid #e8f0fe; padding-bottom: 10px; }
+        .info { text-align: center; font-size: 0.9em; color: #666; margin-bottom: 30px; }
+        .question { margin-bottom: 35px; padding: 20px; border: 1px solid #dee2e6; border-radius: 10px; background-color: #fff; transition: 0.3s; }
+        .question-text { font-weight: bold; font-size: 1.15em; margin-bottom: 15px; display: block; }
+        .options { list-style: none; padding: 0; }
+        .options li { margin-bottom: 12px; padding: 12px; border-radius: 8px; border: 2px solid #f0f0f0; cursor: pointer; transition: 0.2s; position: relative; }
+        .options li:hover { background-color: #f8fbff; border-color: #d1e3fa; }
+        
+        input[type="radio"] { margin-right: 15px; transform: scale(1.3); vertical-align: middle; }
+        label { cursor: pointer; width: 85%; display: inline-block; vertical-align: middle; }
+        
+        /* Подсветка ответов */
+        .correct { background-color: #d4edda !important; border-color: #c3e6cb !important; color: #155724; font-weight: bold; }
+        .wrong { background-color: #f8d7da !important; border-color: #f5c6cb !important; color: #721c24; }
+        
+        .btn-hint { background-color: #fef3c7; color: #92400e; border: 1px solid #fcd34d; padding: 8px 15px; border-radius: 5px; font-size: 0.85em; cursor: pointer; margin-top: 10px; }
+        .hint-text { display: none; margin-top: 10px; padding: 10px; background: #fffbeb; border-left: 5px solid #f59e0b; font-size: 0.9em; color: #444; }
+        
+        .btn-submit { background-color: #1a73e8; color: white; width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 1.2em; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        .btn-submit:hover { background-color: #1557b0; }
+        
+        #result-box { margin-top: 30px; padding: 25px; text-align: center; border-radius: 12px; display: none; }
+        .score-text { font-size: 1.5em; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h1>Тест: Математическая грамотность (9 класс)</h1>
+    <p class="info">Подготовка к МОДО. Время выполнения: 25 минут. В тесте 20 вопросов.</p>
+    
+    <div id="quiz-content"></div>
+
+    <button class="btn-submit" onclick="gradeQuiz()">Проверить ответы</button>
+    <div id="result-box"></div>
+</div>
+
+<script>
+    const quizData = [
+        {
+            q: "1. Какой цифрой оканчивается значение степени \\( 7^{2022} \\)?",
+            a: ["1", "7", "9", "3"],
+            cor: 2,
+            h: "Закономерность последних цифр для \\( 7^n \\): 7, 9, 3, 1. Цикл повторяется каждые 4 степени."
+        },
+        {
+            q: "2. Переведите угол \\( \\frac{3\\pi}{4} \\) в градусную меру.",
+            a: ["120°", "135°", "150°", "225°"],
+            cor: 1,
+            h: "Замените \\( \\pi \\) на 180° и вычислите: \\( \\frac{3 \\cdot 180}{4} \\)."
+        },
+        {
+            q: "3. Вычислите: \\( \\sqrt{2} \\cdot \\sqrt{18} \\).",
+            a: ["\\( \\sqrt{20} \\)", "36", "6", "4"],
+            cor: 2,
+            h: "Используйте свойство: \\( \\sqrt{a} \\cdot \\sqrt{b} = \\sqrt{a \\cdot b} \\)."
+        },
+        {
+            q: "4. Найдите значение выражения: \\( (2^{-2})^3 \\cdot 2^8 \\).",
+            a: ["2", "4", "16", "1"],
+            cor: 1,
+            h: "Примените свойства: \\( (a^n)^m = a^{n \\cdot m} \\) и \\( a^n \\cdot a^m = a^{n+m} \\)."
+        },
+        {
+            q: "5. Решите уравнение: \\( 3x - (x + 2) = 10 \\).",
+            a: ["4", "6", "12", "8"],
+            cor: 1,
+            h: "Раскройте скобки, учитывая знак минус, и приведите подобные слагаемые."
+        },
+        {
+            q: "6. Чему равно значение \\( \\cos(120^\\circ) \\)?",
+            a: ["\\( \\frac{1}{2} \\)", "\\( -\\frac{1}{2} \\)", "\\( \\frac{\\sqrt{3}}{2} \\)", "0"],
+            cor: 1,
+            h: "Воспользуйтесь формулой приведения: \\( \\cos(180^\\circ - 60^\\circ) = -\\cos(60^\\circ) \\)."
+        },
+        {
+            q: "7. Найдите знаменатель геометрической прогрессии, если \\( b_1 = 5 \\) и \\( b_2 = -10 \\).",
+            a: ["2", "-2", "0,5", "-0,5"],
+            cor: 1,
+            h: "Знаменатель находится как отношение последующего члена к предыдущему: \\( q = \\frac{b_2}{b_1} \\)."
+        },
+        {
+            q: "8. Сумма углов в выпуклом пятиугольнике равна:",
+            a: ["360°", "540°", "720°", "180°"],
+            cor: 1,
+            h: "Формула суммы углов: \\( 180^\\circ \\cdot (n - 2) \\)."
+        },
+        {
+            q: "9. Укажите область определения функции \\( y = \\sqrt{x - 7} \\).",
+            a: ["\\( x < 7 \\)", "\\( x \\neq 7 \\)", "\\( x \\ge 7 \\)", "Любое число"],
+            cor: 2,
+            h: "Выражение под корнем должно быть неотрицательным: \\( x - 7 \\ge 0 \\)."
+        },
+        {
+            q: "10. Какова вероятность того, что при броске игральной кости выпадет четное число?",
+            a: ["\\( \\frac{1}{6} \\)", "\\( \\frac{1}{3} \\)", "\\( 0,5 \\)", "\\( 0,3 \\)"],
+            cor: 2,
+            h: "Благоприятные исходы: 2, 4, 6. Всего исходов: 6."
+        },
+        {
+            q: "11. Представьте выражение в виде степени: \\( \\frac{x^9}{x^3} \\).",
+            a: ["\\( x^3 \\)", "\\( x^6 \\)", "\\( x^{12} \\)", "\\( x^{27} \\)"],
+            cor: 1,
+            h: "При делении степеней с одинаковым основанием показатели вычитаются."
+        },
+        {
+            q: "12. Найдите катет прямоугольного треугольника, если гипотенуза равна 17, а второй катет — 8.",
+            a: ["9", "10", "15", "13"],
+            cor: 2,
+            h: "Используйте теорему Пифагора: \\( a^2 + 8^2 = 17^2 \\)."
+        },
+        {
+            q: "13. Упростите выражение: \\( (x + 3)^2 - 6x \\).",
+            a: ["\\( x^2 + 9 \\)", "\\( x^2 - 9 \\)", "\\( x^2 + 12x + 9 \\)", "9"],
+            cor: 0,
+            h: "Разложите квадрат суммы: \\( x^2 + 6x + 9 \\), затем вычтите \\( 6x \\)."
+        },
+        {
+            q: "14. Решите неравенство: \\( 5 - 2x > 11 \\).",
+            a: ["\\( x > -3 \\)", "\\( x < -3 \\)", "\\( x < 3 \\)", "\\( x > 8 \\)"],
+            cor: 1,
+            h: "Перенесите 5 вправо и при делении на -2 не забудьте поменять знак неравенства."
+        },
+        {
+            q: "15. Чему равен синус угла \\( \\pi \\)?",
+            a: ["1", "0", "-1", "0,5"],
+            cor: 1,
+            h: "Посмотрите на координату y точки на единичной окружности при повороте на 180°."
+        },
+        {
+            q: "16. Прямая задана уравнением \\( y = 3x - 4 \\). Какова координата \\( y \\) при \\( x = 2 \\)?",
+            a: ["2", "10", "6", "4"],
+            cor: 0,
+            h: "Подставьте 2 вместо \\( x \\) и вычислите: \\( 3 \\cdot 2 - 4 \\)."
+        },
+        {
+            q: "17. Периметр прямоугольника равен 30 см, а его длина — 10 см. Найдите его площадь.",
+            a: ["200 см\\(^2\\)", "50 см\\(^2\\)", "150 см\\(^2\\)", "100 см\\(^2\\)"],
+            cor: 1,
+            h: "Найдите ширину: \\( 30 = 2 \\cdot (10 + b) \\). Затем умножьте длину на ширину."
+        },
+        {
+            q: "18. Найдите медиану выборки: 3, 7, 2, 8, 5.",
+            a: ["2", "5", "7", "8"],
+            cor: 1,
+            h: "Расположите числа по порядку и выберите то, что стоит посередине."
+        },
+        {
+            q: "19. Чему равна сумма корней уравнения \\( x^2 - 7x + 10 = 0 \\)?",
+            a: ["-7", "10", "7", "3"],
+            cor: 2,
+            h: "Согласно теореме Виета, сумма корней равна коэффициенту \\( b \\) с противоположным знаком."
+        },
+        {
+            q: "20. Упростите дробь: \\( \\frac{x^2 - 16}{x + 4} \\).",
+            a: ["\\( x + 4 \\)", "\\( x - 4 \\)", "\\( x - 16 \\)", "4"],
+            cor: 1,
+            h: "Разложите числитель по формуле разности квадратов: \\( (x-4)(x+4) \\)."
+        }
+    ];
+
+    function buildQuiz() {
+        const container = document.getElementById('quiz-content');
+        quizData.forEach((item, index) => {
+            const qDiv = document.createElement('div');
+            qDiv.className = 'question';
+            qDiv.id = `block-${index}`;
+
+            let optionsList = '';
+            item.a.forEach((ans, i) => {
+                optionsList += `
+                    <li id="q${index}opt${i}">
+                        <label>
+                            <input type="radio" name="question${index}" value="${i}">
+                            ${ans}
+                        </label>
+                    </li>
+                `;
+            });
+
+            qDiv.innerHTML = `
+                <span class="question-text">${item.q}</span>
+                <ul class="options">${optionsList}</ul>
+                <button class="btn-hint" onclick="toggleHint(${index})">Лампочка-подсказка 💡</button>
+                <div id="hint-${index}" class="hint-text">${item.h}</div>
+            `;
+            container.appendChild(qDiv);
+        });
+    }
+
+    function toggleHint(idx) {
+        const h = document.getElementById(`hint-${idx}`);
+        h.style.display = h.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function gradeQuiz() {
+        let score = 0;
+        quizData.forEach((item, index) => {
+            const selected = document.querySelector(`input[name="question${index}"]:checked`);
+            const options = document.querySelectorAll(`#block-${index} li`);
+            
+            // Сброс стилей
+            options.forEach(opt => opt.className = '');
+
+            if (selected) {
+                const userChoice = parseInt(selected.value);
+                if (userChoice === item.cor) {
+                    score++;
+                    document.getElementById(`q${index}opt${userChoice}`).className = 'correct';
+                } else {
+                    document.getElementById(`q${index}opt${userChoice}`).className = 'wrong';
+                    document.getElementById(`q${index}opt${item.cor}`).className = 'correct';
+                }
+            } else {
+                // Если не ответил, просто показать правильный
+                document.getElementById(`q${index}opt${item.cor}`).className = 'correct';
+            }
+        });
+
+        const resultBox = document.getElementById('result-box');
+        resultBox.style.display = 'block';
+        let percent = (score / quizData.length) * 100;
+        
+        let color = '#fef3c7';
+        let msg = "Нужно подучить теорию.";
+        if (percent >= 80) { color = '#d4edda'; msg = "Отличный результат! Высокий уровень."; }
+        else if (percent >= 50) { color = '#e8f0fe'; msg = "Хороший результат. Средний уровень."; }
+
+        resultBox.style.backgroundColor = color;
+        resultBox.innerHTML = `
+            <div class="score-text">Ваш балл: ${score} из ${quizData.length}</div>
+            <div>${msg}</div>
+            <p style="font-size:0.8em; margin-top:10px;">(Зеленым выделены верные ответы, красным — ваши ошибки)</p>
+        `;
+
+        MathJax.typeset(); // Обновление формул после изменения стилей
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    buildQuiz();
+</script>
+
+</body>
+</html>
