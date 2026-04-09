@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Интерактивный тренажер МОДО</title>
+    
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['\\(', '\\)']],
+                displayMath: [['\\[', '\\]']]
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; padding: 20px; }
+        .quiz-card { background: white; max-width: 600px; width: 100%; padding: 30px; border-radius: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .progress { font-size: 0.9em; color: #666; margin-bottom: 10px; text-align: right; }
+        .question-text { font-size: 1.2em; font-weight: bold; margin-bottom: 20px; display: block; min-height: 3em; }
+        .options { list-style: none; padding: 0; margin-bottom: 20px; }
+        .options li { margin-bottom: 12px; padding: 15px; border: 2px solid #edf2f7; border-radius: 10px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; }
+        .options li:hover { background-color: #f7fafc; }
+        input[type="radio"] { margin-right: 15px; transform: scale(1.3); }
+        
+        /* Цвета ответов */
+        .selected-correct { background-color: #c6f6d5 !important; border-color: #38a169 !important; color: #22543d; font-weight: bold; }
+        .selected-wrong { background-color: #fed7d7 !important; border-color: #e53e3e !important; color: #742a2a; }
+        
+        .hint-box { display: none; margin-top: 15px; padding: 15px; background: #fffaf0; border-left: 5px solid #ed8936; border-radius: 5px; font-size: 0.95em; color: #7b341e; }
+        
+        .controls { display: flex; gap: 10px; margin-top: 20px; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1em; transition: 0.3s; }
+        .btn-answer { background-color: #3182ce; color: white; }
+        .btn-answer:disabled { background-color: #cbd5e0; cursor: not-allowed; }
+        .btn-next { background-color: #2f855a; color: white; display: none; }
+        
+        #final-screen { display: none; text-align: center; }
+        .score-circle { font-size: 3em; color: #3182ce; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<div class="quiz-card">
+    <div id="quiz-ui">
+        <div class="progress" id="progress-text">Вопрос 1 из 20</div>
+        <div id="question-container">
+            <span class="question-text" id="q-text">Загрузка вопроса...</span>
+            <ul class="options" id="options-list"></ul>
+        </div>
+        
+        <div class="hint-box" id="hint-display"></div>
+
+        <div class="controls">
+            <button class="btn-answer" id="answer-btn" onclick="submitAnswer()">Ответить</button>
+            <button class="btn-next" id="next-btn" onclick="nextQuestion()">Далее →</button>
+        </div>
+    </div>
+
+    <div id="final-screen">
+        <h2>Тест завершен!</h2>
+        <div class="score-circle" id="final-score">0 / 20</div>
+        <p id="final-msg"></p>
+        <button class="btn-answer" onclick="location.reload()">Пройти еще раз</button>
+    </div>
+</div>
+
+<script>
+    const quizData = [
+        { q: "1. Вычислите: \\( 5^{-2} \\cdot 25 \\).", a: ["1", "5", "25", "0"], cor: 0, h: "Примените свойство: \\( 5^{-2} = \\frac{1}{25} \\). Тогда \\( \\frac{1}{25} \\cdot 25 = 1 \\)." },
+        { q: "2. Что больше: \\( \\sqrt{10} \\) или \\( 3,1 \\)?", a: ["\\( \\sqrt{10} \\)", "3,1", "Они равны", "Нельзя сравнить"], cor: 0, h: "Возведите в квадрат: \\( (\\sqrt{10})^2 = 10 \\), а \\( 3,1^2 = 9,61 \\)." },
+        { q: "3. Скидка на товар составила 15%. Сколько стал стоить товар ценой 2000 тенге?", a: ["1700", "1850", "1500", "1985"], cor: 0, h: "15% от 2000 — это 300. \\( 2000 - 300 = 1700 \\)." },
+        { q: "4. Решите: \\( \\frac{x}{3} - 1 < 2 \\).", a: ["x < 3", "x < 9", "x > 9", "x = 9"], cor: 1, h: "Перенесите 1: \\( \\frac{x}{3} < 3 \\). Умножьте на 3: \\( x < 9 \\)." },
+        { q: "5. Вероятность выпадения «орла» при одном броске монеты:", a: ["0", "1", "0,5", "0,2"], cor: 2, h: "Всего 2 исхода, нужный — 1. \\( 1/2 = 0,5 \\)." },
+        { q: "6. Найдите \\( a_5 \\) арифметической прогрессии, если \\( a_1 = 10, d = -2 \\).", a: ["2", "4", "0", "8"], cor: 0, h: "\\( a_5 = 10 + 4 \\cdot (-2) = 10 - 8 = 2 \\)." },
+        { q: "7. Упростите: \\( \\sin^2 \\alpha + \\cos^2 \\alpha + 5 \\).", a: ["5", "6", "\\( \\sin \\alpha + 5 \\)", "0"], cor: 1, h: "Основное тождество: \\( \\sin^2 \\alpha + \\cos^2 \\alpha = 1 \\). Итого: \\( 1 + 5 = 6 \\)." },
+        { q: "8. Сумма углов в треугольнике равна:", a: ["90°", "360°", "180°", "270°"], cor: 2, h: "Это базовое свойство любого плоского треугольника." },
+        { q: "9. График \\( y = 2x + b \\) проходит через (0; 4). Чему равно \\( b \\)?", a: ["2", "4", "0", "-4"], cor: 1, h: "Подставьте \\( x=0 \\) в уравнение: \\( y = 2(0) + b \\), значит \\( y = b \\). У нас \\( y=4 \\)." },
+        { q: "10. Решите систему: \\( x=2y, x+y=6 \\). Найдите \\( y \\).", a: ["2", "3", "4", "1"], cor: 0, h: "\\( 2y + y = 6 \\Rightarrow 3y = 6 \\Rightarrow y = 2 \\)." },
+        { q: "11. Стандартный вид числа 125 000:", a: ["\\( 1,25 \\cdot 10^5 \\)", "\\( 12,5 \\cdot 10^4 \\)", "\\( 1,25 \\cdot 10^4 \\)", "0,125"], cor: 0, h: "Запятая переносится на 5 знаков влево: \\( 1,25 \\cdot 10^5 \\)." },
+        { q: "12. Объединение множеств {1,2} и {2,3}:", a: ["{2}", "{1,2,3}", "{1,3}", "{1,2,2,3}"], cor: 1, h: "Объединение — это все уникальные элементы из обоих списков." },
+        { q: "13. Углы при основании равнобедренного треугольника:", a: ["Всегда разные", "Равны", "Сумма 180°", "Прямые"], cor: 1, h: "Это основное свойство равнобедренного треугольника." },
+        { q: "14. Среднее чисел 10, 20, 30:", a: ["20", "15", "60", "25"], cor: 0, h: "\\( (10+20+30) / 3 = 60 / 3 = 20 \\)." },
+        { q: "15. Решите: \\( |x| < 5 \\).", a: ["x < 5", "x > -5", "-5 < x < 5", "Пусто"], cor: 2, h: "Модуль меньше числа означает интервал от -5 до 5." },
+        { q: "16. Корни \\( x^2 - 5x + 6 = 0 \\):", a: ["2 и 3", "1 и 6", "-2 и -3", "0 и 5"], cor: 0, h: "По Виету: сумма 5, произведение 6. Это 2 и 3." },
+        { q: "17. Объем куба со стороной 3 см:", a: ["9", "27", "12", "18"], cor: 1, h: "\\( V = 3^3 = 27 \\)." },
+        { q: "18. Скорость, если 100 км пройдено за 2 часа:", a: ["50 км/ч", "200 км/ч", "40 км/ч", "60 км/ч"], cor: 0, h: "\\( V = S / t = 100 / 2 \\)." },
+        { q: "19. \\( 4^3 \\) оканчивается на цифру:", a: ["2", "4", "6", "8"], cor: 1, h: "\\( 4 \cdot 4 \cdot 4 = 64 \\). Последняя цифра 4." },
+        { q: "20. График квадратичной функции:", a: ["Прямая", "Окружность", "Парабола", "Гипербола"], cor: 2, h: "Функция вида \\( y = ax^2 + bx + c \\) — это всегда парабола." }
+    ];
+
+    let currentIdx = 0;
+    let score = 0;
+
+    function renderQuestion() {
+        const item = quizData[currentIdx];
+        document.getElementById('progress-text').innerText = `Вопрос ${currentIdx + 1} из ${quizData.length}`;
+        document.getElementById('q-text').innerText = item.q;
+        
+        const list = document.getElementById('options-list');
+        list.innerHTML = '';
+        
+        item.a.forEach((text, i) => {
+            const li = document.createElement('li');
+            li.innerHTML = `<input type="radio" name="answer" value="${i}" id="opt${i}"><label for="opt${i}">${text}</label>`;
+            li.onclick = () => { if(document.getElementById('answer-btn').style.display !== 'none') document.getElementById(`opt${i}`).checked = true; };
+            list.appendChild(li);
+        });
+
+        document.getElementById('hint-display').style.display = 'none';
+        document.getElementById('answer-btn').style.display = 'block';
+        document.getElementById('next-btn').style.display = 'none';
+        
+        MathJax.typeset();
+    }
+
+    function submitAnswer() {
+        const selected = document.querySelector('input[name="answer"]:checked');
+        if (!selected) return alert("Пожалуйста, выбери ответ!");
+
+        const userAns = parseInt(selected.value);
+        const correctAns = quizData[currentIdx].cor;
+        const options = document.querySelectorAll('.options li');
+
+        if (userAns === correctAns) {
+            score++;
+            options[userAns].classList.add('selected-correct');
+        } else {
+            options[userAns].classList.add('selected-wrong');
+            const hint = document.getElementById('hint-display');
+            hint.innerHTML = `<strong>Подсказка:</strong> ${quizData[currentIdx].h}`;
+            hint.style.display = 'block';
+        }
+
+        document.getElementById('answer-btn').style.display = 'none';
+        document.getElementById('next-btn').style.display = 'block';
+        MathJax.typeset();
+    }
+
+    function nextQuestion() {
+        currentIdx++;
+        if (currentIdx < quizData.length) {
+            renderQuestion();
+        } else {
+            showFinal();
+        }
+    }
+
+    function showFinal() {
+        document.getElementById('quiz-ui').style.display = 'none';
+        const screen = document.getElementById('final-screen');
+        screen.style.display = 'block';
+        document.getElementById('final-score').innerText = `${score} / ${quizData.length}`;
+        
+        let msg = score > 15 ? "Превосходно! Ты готов к МОДО." : score > 10 ? "Хороший результат, но можно лучше!" : "Нужно еще раз повторить теорию.";
+        document.getElementById('final-msg').innerText = msg;
+    }
+
+    renderQuestion();
+</script>
+
+</body>
+</html>
