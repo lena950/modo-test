@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест МОДО: Математическая грамотность (9 класс)</title>
+    
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['\\(', '\\)']],
+                displayMath: [['\\[', '\\]']]
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; padding: 20px; }
+        .quiz-card { background: white; max-width: 650px; width: 100%; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        .progress { font-size: 0.85em; color: #888; margin-bottom: 15px; text-align: left; letter-spacing: 1px; }
+        .question-text { font-size: 1.25em; font-weight: 600; margin-bottom: 25px; color: #2d3748; line-height: 1.5; min-height: 3.5em; }
+        .options { list-style: none; padding: 0; margin-bottom: 25px; }
+        .options li { margin-bottom: 12px; padding: 16px; border: 2px solid #edf2f7; border-radius: 12px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; }
+        .options li:hover { border-color: #cbd5e0; background-color: #f7fafc; }
+        input[type="radio"] { margin-right: 15px; transform: scale(1.3); cursor: pointer; }
+        label { cursor: pointer; flex-grow: 1; font-size: 1.05em; }
+        
+        /* Цвета ответов */
+        .selected-correct { background-color: #c6f6d5 !important; border-color: #38a169 !important; color: #22543d; font-weight: bold; }
+        .selected-wrong { background-color: #fed7d7 !important; border-color: #e53e3e !important; color: #742a2a; }
+        
+        .hint-box { display: none; margin-top: 20px; padding: 18px; background: #fffaf0; border-left: 6px solid #ed8936; border-radius: 8px; font-size: 0.95em; color: #7b341e; animation: fadeIn 0.4s; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .controls { display: flex; gap: 15px; margin-top: 25px; }
+        button { flex: 1; padding: 15px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1.05em; transition: 0.3s; }
+        .btn-answer { background-color: #4299e1; color: white; box-shadow: 0 4px 6px rgba(66, 153, 225, 0.2); }
+        .btn-answer:hover { background-color: #3182ce; }
+        .btn-next { background-color: #48bb78; color: white; display: none; box-shadow: 0 4px 6px rgba(72, 187, 120, 0.2); }
+        
+        #final-screen { display: none; text-align: center; }
+        .score-display { font-size: 4em; font-weight: 800; color: #2b6cb0; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<div class="quiz-card">
+    <div id="quiz-ui">
+        <div class="progress" id="progress-text">ЗАДАНИЕ 1 ИЗ 20</div>
+        <div id="question-container">
+            <span class="question-text" id="q-text">Загрузка...</span>
+            <ul class="options" id="options-list"></ul>
+        </div>
+        
+        <div class="hint-box" id="hint-display"></div>
+
+        <div class="controls">
+            <button class="btn-answer" id="answer-btn" onclick="submitAnswer()">Ответить</button>
+            <button class="btn-next" id="next-btn" onclick="nextQuestion()">Следующий вопрос →</button>
+        </div>
+    </div>
+
+    <div id="final-screen">
+        <h2>Тестирование завершено</h2>
+        <p>Ваш результат по математической грамотности:</p>
+        <div class="score-display" id="final-score">0 / 20</div>
+        <p id="final-msg" style="font-size: 1.1em; color: #4a5568; margin-bottom: 30px;"></p>
+        <button class="btn-answer" onclick="location.reload()">Начать заново</button>
+    </div>
+</div>
+
+<script>
+    const quizData = [
+        { q: "1. Отметьте число, соответствующее точке \\( \\frac{3\\pi}{2} \\) на единичной окружности.", a: ["0", "1", "-1", "0,5"], cor: 2, h: "Точка \\( \\frac{3\\pi}{2} \\) находится в самом низу окружности. Координата \\( y \\) в этой точке равна \\( -1 \\)." },
+        { q: "2. Какой цифрой оканчивается значение степени \\( 2^{2025} \\)?", a: ["2", "4", "6", "8"], cor: 0, h: "Цикл последних цифр у степени двойки: 2, 4, 8, 6. Делим 2025 на 4, остаток 1. Первая цифра цикла — 2." },
+        { q: "3. Вычислите: \\( 10^{-3} \\cdot 10^5 \\).", a: ["0,01", "100", "1000", "0,001"], cor: 1, h: "При умножении показатели складываются: \\( -3 + 5 = 2 \\). \\( 10^2 = 100 \\)." },
+        { q: "4. Сравните числа: \\( 2\\sqrt{3} \\) и \\( 3\\sqrt{2} \\).", a: ["\\( 2\\sqrt{3} > 3\\sqrt{2} \\)", "\\( 2\\sqrt{3} < 3\\sqrt{2} \\)", "Они равны", "Сравнить нельзя"], cor: 1, h: "Возведите в квадрат: \\( (2\\sqrt{3})^2 = 4 \\cdot 3 = 12 \\), а \\( (3\\sqrt{2})^2 = 9 \\cdot 2 = 18 \\). 12 меньше 18." },
+        { q: "5. В магазине товар стоил 5000 тенге. Цена снизилась на 20%. Сколько теперь стоит товар?", a: ["4000 тенге", "4500 тенге", "3000 тенге", "4800 тенге"], cor: 0, h: "20% от 5000 — это 1000 тенге. \\( 5000 - 1000 = 4000 \\)." },
+        { q: "6. Решите неравенство: \\( 2(x - 3) > 4 \\).", a: ["x > 5", "x > 2", "x > 7", "x < 5"], cor: 0, h: "Разделите на 2: \\( x - 3 > 2 \\). Перенесите 3: \\( x > 5 \\)." },
+        { q: "7. В коробке 4 красных, 6 синих и 10 зеленых карандашей. Какова вероятность вытащить синий карандаш?", a: ["0,6", "0,3", "0,4", "0,5"], cor: 1, h: "Всего 20 карандашей. Вероятность \\( P = 6 / 20 = 0,3 \\)." },
+        { q: "8. Найдите десятый член арифметической прогрессии, если \\( a_1 = 3, d = 4 \\).", a: ["37", "39", "43", "40"], cor: 1, h: "Формула: \\( a_{10} = a_1 + 9d = 3 + 9 \\cdot 4 = 3 + 36 = 39 \\)." },
+        { q: "9. Сумма \\( n \\) первых членов геометрической прогрессии вычисляется по формуле. Найдите \\( S_3 \\), если \\( b_1 = 2, q = 3 \\).", a: ["26", "18", "24", "20"], cor: 0, h: "\\( S_3 = b_1 + b_1q + b_1q^2 = 2 + 6 + 18 = 26 \\)." },
+        { q: "10. Упростите: \\( 1 - \sin^2 \alpha \\).", a: ["\\( \cos \alpha \\)", "\\( \cos^2 \alpha \\)", "\\( \tan^2 \alpha \\)", "1"], cor: 1, h: "Это следствие основного тригонометрического тождества: \\( \sin^2 \alpha + \cos^2 \alpha = 1 \\)." },
+        { q: "11. Найдите координаты точки пересечения прямой \\( y = 3x - 6 \\) с осью \\( OX \\).", a: ["(2; 0)", "(0; -6)", "(0; 2)", "(6; 0)"], cor: 0, h: "На оси \\( OX \\) координата \\( y = 0 \\). \\( 0 = 3x - 6 \Rightarrow 3x = 6 \Rightarrow x = 2 \\)." },
+        { q: "12. Найдите координаты вершины параболы \\( y = (x - 4)^2 + 3 \\).", a: ["(4; 3)", "(-4; 3)", "(3; 4)", "(0; 3)"], cor: 0, h: "Уравнение вида \\( y = (x - m)^2 + n \\) сразу дает координаты вершины \\( (m; n) \\)." },
+        { q: "13. Сумма внутренних углов выпуклого восьмиугольника равна:", a: ["1080°", "1440°", "180°", "360°"], cor: 0, h: "Формула: \\( 180 \cdot (n - 2) = 180 \cdot (8 - 2) = 180 \cdot 6 = 1080 \\)." },
+        { q: "14. Две стороны треугольника равны 5 см и 8 см. Какой может быть третья сторона?", a: ["2 см", "13 см", "10 см", "15 см"], cor: 2, h: "Третья сторона должна быть меньше суммы (13) и больше разности (3) двух других сторон." },
+        { q: "15. Радиус круга увеличили в 2 раза. Во сколько раз увеличилась его площадь?", a: ["В 2 раза", "В 4 раза", "В 8 раз", "Не изменилась"], cor: 1, h: "Площадь \\( S = \pi R^2 \\). Если \\( R \\) увеличить в 2 раза, то \\( R^2 \\) увеличится в 4 раза." },
+        { q: "16. Найдите объем цилиндра, если радиус основания 3 см, а высота 5 см.", a: ["\\( 15\pi \\)", "\\( 45\pi \\)", "\\( 9\pi \\)", "\\( 30\pi \\)"], cor: 1, h: "\\( V = \pi R^2 h = \pi \cdot 3^2 \cdot 5 = 45\pi \\)." },
+        { q: "17. Мода ряда чисел 2, 3, 3, 4, 5, 5, 5, 6 равна:", a: ["3", "4", "5", "6"], cor: 2, h: "Мода — это число, которое встречается в ряду чаще всего. 5 встречается 3 раза." },
+        { q: "18. Среднее арифметическое чисел 15, 25, 35, 45 равно:", a: ["30", "31,25", "25", "35"], cor: 0, h: "\\( (15+25+35+45) / 4 = 120 / 4 = 30 \\)." },
+        { q: "19. Сколько существует способов расставить 3 разные книги на полке?", a: ["3", "6", "9", "12"], cor: 1, h: "Это число перестановок: \\( 3! = 3 \cdot 2 \cdot 1 = 6 \\)." },
+        { q: "20. Поезд проехал 120 км со скоростью 60 км/ч, а затем еще 120 км со скоростью 40 км/ч. Найдите среднюю скорость.", a: ["50 км/ч", "48 км/ч", "55 км/ч", "45 км/ч"], cor: 1, h: "Средняя скорость = Весь путь / Всё время. \\( 240 / (2 + 3) = 240 / 5 = 48 \\)." }
+    ];
+
+    let currentIdx = 0;
+    let score = 0;
+
+    function renderQuestion() {
+        const item = quizData[currentIdx];
+        document.getElementById('progress-text').innerText = `ЗАДАНИЕ ${currentIdx + 1} ИЗ ${quizData.length}`;
+        document.getElementById('q-text').innerText = item.q;
+        
+        const list = document.getElementById('options-list');
+        list.innerHTML = '';
+        
+        item.a.forEach((text, i) => {
+            const li = document.createElement('li');
+            li.innerHTML = `<input type="radio" name="answer" value="${i}" id="opt${i}"><label for="opt${i}">${text}</label>`;
+            li.onclick = () => { if(document.getElementById('answer-btn').style.display !== 'none') document.getElementById(`opt${i}`).checked = true; };
+            list.appendChild(li);
+        });
+
+        document.getElementById('hint-display').style.display = 'none';
+        document.getElementById('answer-btn').style.display = 'block';
+        document.getElementById('next-btn').style.display = 'none';
+        
+        MathJax.typeset();
+    }
+
+    function submitAnswer() {
+        const selected = document.querySelector('input[name="answer"]:checked');
+        if (!selected) {
+            alert("Пожалуйста, выберите вариант ответа!");
+            return;
+        }
+
+        const userAns = parseInt(selected.value);
+        const correctAns = quizData[currentIdx].cor;
+        const options = document.querySelectorAll('.options li');
+
+        if (userAns === correctAns) {
+            score++;
+            options[userAns].classList.add('selected-correct');
+        } else {
+            options[userAns].classList.add('selected-wrong');
+            const hint = document.getElementById('hint-display');
+            hint.innerHTML = `<strong>Подсказка:</strong> ${quizData[currentIdx].h}`;
+            hint.style.display = 'block';
+        }
+
+        document.getElementById('answer-btn').style.display = 'none';
+        document.getElementById('next-btn').style.display = 'block';
+        MathJax.typeset();
+    }
+
+    function nextQuestion() {
+        currentIdx++;
+        if (currentIdx < quizData.length) {
+            renderQuestion();
+        } else {
+            showFinal();
+        }
+    }
+
+    function showFinal() {
+        document.getElementById('quiz-ui').style.display = 'none';
+        const screen = document.getElementById('final-screen');
+        screen.style.display = 'block';
+        document.getElementById('final-score').innerText = `${score} / ${quizData.length}`;
+        
+        let msg = "";
+        if (score >= 18) msg = "Превосходно! У вас высокий уровень математической грамотности.";
+        else if (score >= 13) msg = "Хороший результат! Вы успешно прошли порог МОДО.";
+        else msg = "Рекомендуется повторить основные темы спецификации 9 класса.";
+        
+        document.getElementById('final-msg').innerText = msg;
+    }
+
+    renderQuestion();
+</script>
+
+</body>
+</html>
