@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>МОДО: Математическая грамотность (Вариант 3)</title>
+    
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['\\(', '\\)']],
+                displayMath: [['\\[', '\\]']]
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; max-width: 850px; margin: 0 auto; padding: 20px; background-color: #f8f9fa; color: #333; }
+        .quiz-container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { color: #202124; text-align: center; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; }
+        .info { text-align: center; color: #70757a; margin-bottom: 30px; }
+        .question { margin-bottom: 30px; padding: 20px; border: 1px solid #dadce0; border-radius: 10px; transition: background 0.3s; }
+        .question-text { font-weight: 600; font-size: 1.1em; margin-bottom: 15px; display: block; }
+        .options { list-style: none; padding: 0; }
+        .options li { margin-bottom: 10px; padding: 12px; border-radius: 8px; border: 1px solid #f1f3f4; cursor: pointer; display: flex; align-items: center; }
+        
+        input[type="radio"] { margin-right: 15px; transform: scale(1.3); }
+        label { cursor: pointer; flex-grow: 1; }
+        
+        /* Стили индикации */
+        .correct { background-color: #e6f4ea !important; border-color: #34a853 !important; color: #137333; font-weight: bold; }
+        .wrong { background-color: #fce8e6 !important; border-color: #ea4335 !important; color: #c5221f; }
+        
+        .hint-text { display: none; margin-top: 15px; padding: 12px; background: #fff4e5; border-left: 4px solid #fb8c00; border-radius: 4px; font-size: 0.9em; }
+        
+        .btn-submit { background-color: #1a73e8; color: white; width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 1.1em; font-weight: bold; cursor: pointer; margin-top: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-submit:hover { background-color: #1765cc; }
+        
+        #result-display { margin-top: 30px; padding: 25px; text-align: center; border-radius: 12px; display: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h1>Тренировочный тест МОДО (Вариант 3)</h1>
+    <p class="info">Проверка математической грамотности. 20 вопросов.</p>
+    
+    <div id="quiz-content"></div>
+
+    <button class="btn-submit" id="submit-btn" onclick="checkQuiz()">Check Results (Проверить результаты)</button>
+    <div id="result-display"></div>
+</div>
+
+<script>
+    const quizData = [
+        {
+            q: "1. Вычислите значение выражения: \\( 5^{-2} \\cdot 25 \\).",
+            a: ["\\( 1 \\)", "\\( 5 \\)", "\\( 25 \\)", "\\( 0 \\)"],
+            cor: 0,
+            h: "Помните, что \\( 5^{-2} = \\frac{1}{5^2} = \\frac{1}{25} \\). Тогда \\( \\frac{1}{25} \\cdot 25 = 1 \\)."
+        },
+        {
+            q: "2. Сравните числа: \\( \\sqrt{10} \\) и \\( 3,1 \\).",
+            a: ["\\( \\sqrt{10} < 3,1 \\)", "\\( \\sqrt{10} > 3,1 \\)", "\\( \\sqrt{10} = 3,1 \\)", "Нельзя сравнить"],
+            cor: 1,
+            h: "Возведите оба числа в квадрат: \\( (\\sqrt{10})^2 = 10 \\), а \\( 3,1^2 = 9,61 \\). 10 больше 9,61."
+        },
+        {
+            q: "3. Цена товара 2000 тенге. После скидки она составила 1700 тенге. На сколько процентов снизилась цена?",
+            a: ["10%", "15%", "20%", "30%"],
+            cor: 1,
+            h: "Найдите сумму скидки: \\( 2000 - 1700 = 300 \\). Составьте пропорцию: \\( \\frac{300}{2000} \\cdot 100\\% \\)."
+        },
+        {
+            q: "4. Решите неравенство: \\( \\frac{x}{3} - 1 < 2 \\).",
+            a: ["\\( x < 3 \\)", "\\( x < 1 \\)", "\\( x < 9 \\)", "\\( x > 9 \\)"],
+            cor: 2,
+            h: "Прибавьте 1 к обеим частям: \\( \\frac{x}{3} < 3 \\). Затем умножьте всё на 3."
+        },
+        {
+            q: "5. В классе 12 мальчиков и 13 девочек. Какова вероятность того, что вызванный к доске ученик — девочка?",
+            a: ["\\( 0,52 \\)", "\\( 0,48 \\)", "\\( 0,13 \\)", "\\( 0,6 \\)"],
+            cor: 0,
+            h: "Вероятность \\( P = \\frac{\\text{девочки}}{\\text{всего учеников}} = \\frac{13}{25} \\). Переведите в десятичную дробь."
+        },
+        {
+            q: "6. Найдите 5-й член арифметической прогрессии, если \\( a_1 = 10, d = -2 \\).",
+            a: ["4", "2", "6", "8"],
+            cor: 1,
+            h: "Формула: \\( a_5 = a_1 + 4d = 10 + 4 \\cdot (-2) \\)."
+        },
+        {
+            q: "7. Упростите выражение: \\( \\sin^2 \\alpha + \\cos^2 \\alpha + \\tan^2 \\alpha \\).",
+            a: ["\\( \\sin^2 \\alpha \\)", "\\( \\cos^2 \\alpha \\)", "\\( \\frac{1}{\\cos^2 \\alpha} \\)", "1"],
+            cor: 2,
+            h: "Используйте основное тождество: \\( \\sin^2 \\alpha + \\cos^2 \\alpha = 1 \\). Далее: \\( 1 + \\tan^2 \\alpha = \\frac{1}{\\cos^2 \\alpha} \\)."
+        },
+        {
+            q: "8. Найдите длину дуги окружности радиусом 6 см, если центральный угол равен \\( 60^\\circ \\).",
+            a: ["\\( \\pi \\)", "\\( 2\\pi \\)", "\\( 3\\pi \\)", "\\( 6\\pi \\)"],
+            cor: 1,
+            h: "Формула длины дуги: \\( L = \\frac{\\pi R \\alpha}{180} = \\frac{\\pi \\cdot 6 \\cdot 60}{180} \\)."
+        },
+        {
+            q: "9. График функции \\( y = 2x + b \\) проходит через точку (1; 5). Чему равно \\( b \\)?",
+            a: ["7", "2", "3", "-3"],
+            cor: 2,
+            h: "Подставьте координаты точки в уравнение: \\( 5 = 2(1) + b \\). Решите уравнение относительно \\( b \\)."
+        },
+        {
+            q: "10. Решите систему уравнений методом подстановки: \\( \\begin{cases} x = 2y \\\\ x + y = 6 \\end{cases} \\). Найдите \\( y \\).",
+            a: ["4", "2", "3", "1"],
+            cor: 1,
+            h: "Подставьте первое уравнение во второе: \\( 2y + y = 6 \\). Отсюда \\( 3y = 6 \\)."
+        },
+        {
+            q: "11. Запишите число \\( 125000 \\) в стандартном виде.",
+            a: ["\\( 1,25 \\cdot 10^5 \\)", "\\( 12,5 \\cdot 10^4 \\)", "\\( 0,125 \\cdot 10^6 \\)", "\\( 1,25 \\cdot 10^6 \\)"],
+            cor: 0,
+            h: "Стандартный вид: \\( a \\cdot 10^n \\), где \\( 1 \\le a < 10 \\). Запятую нужно перенести на 5 знаков влево."
+        },
+        {
+            q: "12. Найдите объединение множеств \\( A = \\{10, 20, 30\\} \\) и \\( B = \\{20, 30, 40\\} \\).",
+            a: ["\\( \\{20, 30\\} \\)", "\\( \\{10, 20, 30, 40\\} \\)", "\\( \\{10, 40\\} \\)", "\\( \\{10, 20, 30\\} \\)"],
+            cor: 1,
+            h: "Объединение (\\( A \\cup B \\)) включает все элементы из обоих множеств без повторений."
+        },
+        {
+            q: "13. Внешний угол при вершине равнобедренного треугольника равен \\( 100^\\circ \\). Найдите углы при основании.",
+            a: ["40° и 40°", "50° и 50°", "80° и 80°", "100° и 100°"],
+            cor: 1,
+            h: "Внешний угол равен сумме двух внутренних углов, не смежных с ним: \\( \angle 1 + \angle 2 = 100^\circ \\). Так как углы при основании равны, каждый из них по 50°."
+        },
+        {
+            q: "14. Найдите среднее арифметическое чисел: 12, 14, 18, 20.",
+            a: ["15", "16", "17", "18"],
+            cor: 1,
+            h: "Сложите все числа и разделите сумму на их количество (4)."
+        },
+        {
+            q: "15. Решите неравенство: \\( |x| < 4 \\).",
+            a: ["\\( x < 4 \\)", "\\( x > -4 \\)", "\\( -4 < x < 4 \\)", "корней нет"],
+            cor: 2,
+            h: "Неравенство с модулем вида \\( |x| < a \\) раскрывается как двойное неравенство: \\( -a < x < a \\)."
+        },
+        {
+            q: "16. Разложите на множители: \\( x^2 - 5x + 6 \\).",
+            a: ["\\( (x-1)(x-6) \\)", "\\( (x-2)(x-3) \\)", "\\( (x+2)(x+3) \\)", "\\( (x-5)(x+1) \\)"],
+            cor: 1,
+            h: "Найдите корни уравнения по теореме Виета: сумма корней 5, произведение 6. Это числа 2 и 3."
+        },
+        {
+            q: "17. Объем прямоугольного параллелепипеда равен 60 см\\(^3\\). Длина 5 см, ширина 4 см. Найдите высоту.",
+            a: ["2 см", "3 см", "4 см", "5 см"],
+            cor: 1,
+            h: "Формула: \\( V = a \cdot b \cdot c \\). Высота \\( c = V / (a \cdot b) = 60 / 20 \\)."
+        },
+        {
+            q: "18. Автомобиль проехал 180 км за 2 часа 30 минут. Какова его средняя скорость?",
+            a: ["90 км/ч", "80 км/ч", "72 км/ч", "75 км/ч"],
+            cor: 2,
+            h: "2 часа 30 минут — это 2,5 часа. Скорость \\( v = S / t = 180 / 2,5 \\)."
+        },
+        {
+            q: "19. Какой цифрой оканчивается значение \\( 4^{15} \\)?",
+            a: ["4", "6", "2", "8"],
+            cor: 0,
+            h: "Степени четверки: \\( 4^1=4, 4^2=16, 4^3=64, 4^4=256 \\). Нечетная степень оканчивается на 4, четная — на 6."
+        },
+        {
+            q: "20. Укажите функцию, график которой является параболой.",
+            a: ["\\( y = 3x - 1 \\)", "\\( y = x^2 + 4 \\)", "\\( y = \\frac{2}{x} \\)", "\\( y = \\sqrt{x} \\)"],
+            cor: 1,
+            h: "График квадратичной функции \\( y = ax^2 + bx + c \\) называется параболой."
+        }
+    ];
+
+    function loadQuiz() {
+        const container = document.getElementById('quiz-content');
+        quizData.forEach((item, i) => {
+            const div = document.createElement('div');
+            div.className = 'question';
+            div.id = `q-container-${i}`;
+            
+            let opts = '';
+            item.a.forEach((ans, j) => {
+                opts += `<li id="q${i}opt${j}"><label><input type="radio" name="q${i}" value="${j}"> ${ans}</label></li>`;
+            });
+
+            div.innerHTML = `
+                <span class="question-text">${item.q}</span>
+                <ul class="options">${opts}</ul>
+                <div id="hint-${i}" class="hint-text"><strong>Подсказка:</strong> ${item.h}</div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function checkQuiz() {
+        let score = 0;
+        quizData.forEach((item, i) => {
+            const selected = document.querySelector(`input[name="q${i}"]:checked`);
+            const hint = document.getElementById(`hint-${i}`);
+            const options = document.querySelectorAll(`#q-container-${i} li`);
+            
+            // Сброс предыдущих стилей
+            options.forEach(opt => opt.className = '');
+            hint.style.display = 'none';
+
+            if (selected) {
+                const userChoice = parseInt(selected.value);
+                if (userChoice === item.cor) {
+                    score++;
+                    document.getElementById(`q${i}opt${userChoice}`).className = 'correct';
+                } else {
+                    // Подсвечиваем ошибку и показываем подсказку
+                    document.getElementById(`q${i}opt${userChoice}`).className = 'wrong';
+                    hint.style.display = 'block';
+                }
+            }
+            // Если НЕ выбрано - ничего не подсвечиваем (как просили)
+        });
+
+        const resBox = document.getElementById('result-display');
+        resBox.style.display = 'block';
+        resBox.innerHTML = `Result (Результат): ${score} / ${quizData.length}`;
+        resBox.style.backgroundColor = score >= 13 ? '#e6f4ea' : '#fef7e0';
+        
+        MathJax.typeset();
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    loadQuiz();
+</script>
+
+</body>
+</html>
