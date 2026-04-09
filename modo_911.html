@@ -1,0 +1,204 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>МОДО — Вариант №1: Математическая грамотность</title>
+    
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --accent: #3b82f6;
+            --bg: #f8fafc;
+            --text: #1e293b;
+            --white: #ffffff;
+            --correct: #22c55e;
+            --wrong: #ef4444;
+            --hint-bg: #fefce8;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            color: var(--text);
+            padding-bottom: 60px;
+        }
+
+        .app-bar {
+            background: var(--primary);
+            color: white;
+            padding: 16px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .container { flex: 1; padding: 15px; max-width: 500px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+
+        .card { background: var(--white); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+
+        .question-text { font-size: 1.15rem; font-weight: 700; margin-bottom: 20px; line-height: 1.4; color: #0f172a; }
+
+        .option {
+            border: 2px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 10px;
+            cursor: pointer; transition: 0.2s; display: flex; align-items: center; background: #fff;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .option.selected { border-color: var(--accent); background-color: #eff6ff; }
+        
+        .option.is-correct { border-color: var(--correct) !important; background-color: #f0fdf4 !important; color: #166534; font-weight: 700; }
+        .option.is-wrong { border-color: var(--wrong) !important; background-color: #fef2f2 !important; color: #991b1b; }
+
+        .hint-box {
+            display: none; background: var(--hint-bg); border-left: 4px solid #facc15;
+            padding: 12px; border-radius: 4px; margin-top: 15px; font-size: 0.9rem; color: #854d0e;
+        }
+
+        .main-btn {
+            background: var(--primary); color: white; border: none; padding: 16px;
+            border-radius: 10px; font-size: 1.1rem; font-weight: 700; width: 100%; cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .main-btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+        .footer-brand {
+            position: fixed; bottom: 0; left: 0; width: 100%; background: #fff;
+            color: #94a3b8; text-align: center; padding: 10px 0; font-size: 0.85rem;
+            border-top: 1px solid #e2e8f0; z-index: 1000;
+        }
+
+        #result-screen { display: none; text-align: center; }
+        .score-val { font-size: 4rem; color: var(--primary); font-weight: 900; }
+    </style>
+</head>
+<body>
+
+<div class="app-bar">
+    <div style="font-size: 1.1rem; font-weight: 800; letter-spacing: 0.5px;">МОДО — ВАРИАНТ №1</div>
+    <div style="font-size: 0.8rem; opacity: 0.9;">Математическая грамотность • 9 класс</div>
+</div>
+
+<div class="container">
+    <div id="quiz-screen">
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-weight:600; color: #64748b; font-size:0.85rem;">
+            <span>Задание <span id="curr-num">1</span> из 20</span>
+            <span id="perc">0%</span>
+        </div>
+        <div class="card">
+            <div id="q-text" class="question-text">Загрузка...</div>
+            <div id="opt-cont"></div>
+            <div id="hint-text" class="hint-box"></div>
+        </div>
+        <button id="action-btn" class="main-btn" onclick="handleAction()" disabled>Ответить</button>
+    </div>
+
+    <div id="result-screen" class="card">
+        <h2 style="color: var(--primary); margin-top: 0;">Тестирование завершено</h2>
+        <div class="score-val" id="f-score">0</div>
+        <p style="color: #64748b; font-weight: 600;">верных ответов из 20 баллов</p>
+        <button class="main-btn" onclick="location.reload()" style="background:var(--accent); margin-top: 20px;">Пройти заново</button>
+    </div>
+</div>
+
+<div class="footer-brand">@𝔐𝔞𝔱𝔥𝔢𝔪𝔞𝔓𝔯𝔬©</div>
+
+<script>
+    const questions = [
+        { q: "Найдите последнюю цифру в записи числового значения выражения \\(3^{2026}\\).", a: ["1", "3", "7", "9"], c: 3, h: "<b>Подсказка:</b> Степени тройки повторяются циклом: 3, 9, 7, 1 (период 4). При делении 2026 на 4 получаем остаток 2. Вторая цифра цикла — 9." },
+        { q: "Решите уравнение и найдите его корень: \\(2(x - 3,5) = 7 + x\\).", a: ["0", "7", "14", "21"], c: 2, h: "<b>Подсказка:</b> Раскройте скобки: \\(2x - 7 = 7 + x\\). Перенесите переменные влево, а числа вправо: \\(2x - x = 7 + 7\\)." },
+        { q: "Установите закономерность числового ряда и найдите следующее число: 2, 5, 11, 23, ...", a: ["34", "46", "47", "50"], c: 2, h: "<b>Подсказка:</b> Каждое последующее число получается умножением предыдущего на 2 и прибавлением 1: \\(23 \\cdot 2 + 1 = 47\\)." },
+        { q: "Выразите величину угла в \\(150^\\circ\\) через радианную меру.", a: ["\\(5\\pi/6\\)", "\\(2\\pi/3\\)", "\\(3\\pi/4\\)", "\\(5\\pi/3\\)"], c: 0, h: "<b>Подсказка:</b> Для перевода градусов в радианы используйте формулу: \\(\\frac{\\alpha \\cdot \\pi}{180^\\circ}\\). Сократите дробь \\(\\frac{150}{180}\\) на 30." },
+        { q: "Дан ряд чисел: 5, 8, 5, 12, 10, 5, 11. Определите моду этого ряда.", a: ["5", "8", "10", "12"], c: 0, h: "<b>Подсказка:</b> Мода — это значение, которое встречается в ряду данных наиболее часто. В данном случае это число 5." },
+        { q: "Вычислите значение комбинаторного выражения: \\(\\frac{6!}{4! \\cdot 2!}\\).", a: ["15", "30", "12", "6"], c: 0, h: "<b>Подсказка:</b> Сократите факториалы: \\(\\frac{6 \\cdot 5 \\cdot 4!}{4! \\cdot 2 \\cdot 1} = \\frac{30}{2} = 15\\)." },
+        { q: "Найдите значение выражения: \\(\\sqrt{1,44 \\cdot 25} + \\sqrt{0,04}\\).", a: ["6,2", "12,2", "6,02", "3,8"], c: 0, h: "<b>Подсказка:</b> Извлеките корни: \\(\\sqrt{1,44}=1,2\\), \\(\\sqrt{25}=5\\), \\(\\sqrt{0,04}=0,2\\). Получаем: \\(1,2 \\cdot 5 + 0,2 = 6,2\\)." },
+        { q: "В треугольнике два угла равны \\(45^\\circ\\) и \\(85^\\circ\\). Найдите величину третьего угла.", a: ["40°", "50°", "60°", "90°"], c: 1, h: "<b>Подсказка:</b> Сумма внутренних углов любого треугольника всегда равна \\(180^\\circ\\). Вычтите сумму известных углов из 180." },
+        { q: "В прямоугольном треугольнике катеты равны 6 см и 8 см. Чему равна гипотенуза?", a: ["10 см", "12 см", "14 см", "100 см"], c: 0, h: "<b>Подсказка:</b> Используйте теорему Пифагора: \\(c = \\sqrt{a^2 + b^2}\\). Подставьте значения: \\(\\sqrt{36 + 64} = 10\\)." },
+        { q: "Произведение двух последовательных натуральных чисел равно 156. Укажите меньшее из этих чисел.", a: ["11", "12", "13", "14"], c: 1, h: "<b>Подсказка:</b> Пусть числа \\(x\\) и \\(x+1\\). Решите уравнение \\(x^2 + x - 156 = 0\\) или подберите множители: \\(12 \\cdot 13 = 156\\)." },
+        { q: "Найдите длину (модуль) вектора \\(\\vec{a}\\{3; 4\\}\\).", a: ["5", "7", "12", "25"], c: 0, h: "<b>Подсказка:</b> Длина вектора вычисляется по формуле \\(|\\vec{a}| = \\sqrt{x^2 + y^2}\\)." },
+        { q: "Выполните упрощение алгебраического выражения: \\((x - 5)^2 - x^2\\).", a: ["25", "-10x + 25", "10x + 25", "-25"], c: 1, h: "<b>Подсказка:</b> Примените формулу квадрата разности: \\((x^2 - 10x + 25) - x^2 = -10x + 25\\)." },
+        { q: "Укажите функцию, график которой проходит через начало координат.", a: ["y = 2x + 1", "y = -3x", "y = x - 5", "y = 4"], c: 1, h: "<b>Подсказка:</b> График проходит через начало координат \\((0;0)\\), если при \\(x=0\\) значение \\(y=0\\). Это справедливо для прямой пропорциональности \\(y=kx\\)." },
+        { q: "Сравните числа и укажите наибольшее из них.", a: ["\\(\\sqrt{50}\\)", "7", "\\(3\\sqrt{5}\\)", "\\(2\\sqrt{11}\\)"], c: 0, h: "<b>Подсказка:</b> Представьте все числа в виде квадратных корней: \\(7 = \\sqrt{49}\\), \\(3\\sqrt{5} = \\sqrt{45}\\), \\(2\\sqrt{11} = \\sqrt{44}\\)." },
+        { q: "Периметр прямоугольника равен 40 см. Одна сторона на 4 см больше другой. Найдите длину меньшей стороны.", a: ["8 см", "12 см", "10 см", "18 см"], c: 0, h: "<b>Подсказка:</b> Формула периметра \\(2(a+b)=40\\). Подставьте \\(b = a+4\\) и решите уравнение: \\(2(a + a+4) = 40\\)." },
+        { q: "Найдите точное значение тригонометрической функции \\(\\sin(150^\\circ)\\).", a: ["0,5", "-0,5", "\\(\\sqrt{3}/2\\)", "1"], c: 0, h: "<b>Подсказка:</b> Используйте формулы приведения: \\(\\sin 150^\circ = \\sin(180^\circ - 30^\circ) = \\sin 30^\circ = 0,5\\)." },
+        { q: "Стороны треугольника равны 3 см и 5 см, а угол между ними \\(60^\\circ\\). Найдите третью сторону.", a: ["4 см", "\\(\\sqrt{19}\\) см", "7 см", "\\(\\sqrt{34}\\) см"], c: 1, h: "<b>Подсказка:</b> Примените теорему косинусов: \\(c^2 = a^2 + b^2 - 2ab \\cos 60^\circ\\)." },
+        { q: "Для выборки 12, 5, 8, 15, 10 определите медиану.", a: ["8", "10", "12", "15"], c: 1, h: "<b>Подсказка:</b> Сначала упорядочьте ряд: 5, 8, 10, 12, 15. Медианой является число, стоящее ровно посередине." },
+        { q: "Если сторону квадрата увеличить в 3 раза, то во сколько раз увеличится его площадь?", a: ["в 3 раза", "в 6 раз", "в 9 раз", "в 12 раз"], c: 2, h: "<b>Подсказка:</b> Площадь квадрата равна \\(s^2\\). При увеличении стороны в \\(k\\) раз, площадь увеличивается в \\(k^2\\) раз. \\(3^2 = 9\\)." },
+        { q: "Найдите корни квадратного уравнения: \\(x^2 - 5x + 6 = 0\\).", a: ["2; 3", "-2; -3", "1; 6", "5; 6"], c: 0, h: "<b>Подсказка:</b> Используйте теорему Виета: сумма корней равна 5, а их произведение равно 6. Подходят числа 2 и 3." }
+    ];
+
+    let curr = 0, score = 0, sel = null, checked = false;
+
+    function render() {
+        sel = null; checked = false;
+        document.getElementById('action-btn').disabled = true;
+        document.getElementById('action-btn').innerText = "Ответить";
+        document.getElementById('hint-text').style.display = 'none';
+        
+        const q = questions[curr];
+        document.getElementById('curr-num').innerText = curr + 1;
+        document.getElementById('perc').innerText = Math.round((curr/20)*100) + '%';
+        document.getElementById('q-text').innerHTML = q.q;
+        document.getElementById('hint-text').innerHTML = q.h;
+        
+        const cont = document.getElementById('opt-cont'); 
+        cont.innerHTML = '';
+        q.a.forEach((t, i) => {
+            const d = document.createElement('div');
+            d.className = 'option';
+            d.innerHTML = `<b style="margin-right:12px; color:var(--primary); font-size:1.1rem;">${String.fromCharCode(65+i)}</b> ${t}`;
+            d.onclick = () => { if (!checked) selectOption(i, d); };
+            cont.appendChild(d);
+        });
+        if (window.MathJax) MathJax.typesetPromise();
+    }
+
+    function selectOption(index, el) {
+        sel = index;
+        document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+        el.classList.add('selected');
+        document.getElementById('action-btn').disabled = false;
+    }
+
+    function handleAction() {
+        if (!checked) {
+            checked = true;
+            const q = questions[curr];
+            const options = document.querySelectorAll('.option');
+            
+            options[q.c].classList.add('is-correct'); 
+            
+            if (sel === q.c) {
+                score++;
+                document.getElementById('hint-text').style.display = 'none';
+            } else {
+                options[sel].classList.add('is-wrong');
+                document.getElementById('hint-text').style.display = 'block';
+                if (window.MathJax) MathJax.typesetPromise([document.getElementById('hint-text')]);
+            }
+            
+            document.getElementById('action-btn').innerText = (curr < 19) ? "Далее" : "Результат теста";
+        } else {
+            curr++;
+            if (curr < 20) render();
+            else showResult();
+        }
+    }
+
+    function showResult() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('f-score').innerText = score;
+    }
+
+    render();
+</script>
+</body>
+</html>
