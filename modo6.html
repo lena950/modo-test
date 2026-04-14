@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>МОДО: Геометрия. Окружность</title>
+    
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['\\(', '\\)']],
+                displayMath: [['\\[', '\\]']]
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
+        .quiz-card { background: white; max-width: 600px; width: 100%; padding: 35px; border-radius: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .progress { font-size: 0.9em; color: #666; margin-bottom: 10px; text-align: right; font-weight: bold; }
+        .question-text { font-size: 1.2em; font-weight: bold; margin-bottom: 20px; display: block; min-height: 3em; color: #2d3748; }
+        .options { list-style: none; padding: 0; margin-bottom: 20px; }
+        .options li { margin-bottom: 12px; padding: 15px; border: 2px solid #edf2f7; border-radius: 10px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; }
+        .options li:hover { background-color: #f7fafc; border-color: #cbd5e0; }
+        input[type="radio"] { margin-right: 15px; transform: scale(1.3); }
+        
+        .selected-correct { background-color: #c6f6d5 !important; border-color: #38a169 !important; color: #22543d; font-weight: bold; }
+        .selected-wrong { background-color: #fed7d7 !important; border-color: #e53e3e !important; color: #742a2a; }
+        
+        .hint-box { display: none; margin-top: 15px; padding: 15px; background: #fffaf0; border-left: 5px solid #ed8936; border-radius: 5px; font-size: 0.95em; color: #7b341e; }
+        
+        .controls { display: flex; gap: 10px; margin-top: 20px; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1em; transition: 0.3s; }
+        .btn-answer { background-color: #3182ce; color: white; }
+        .btn-next { background-color: #2f855a; color: white; display: none; }
+        
+        #final-screen { display: none; text-align: center; }
+        .score-circle { font-size: 3.5em; color: #3182ce; margin: 20px 0; font-weight: 800; }
+    </style>
+</head>
+<body>
+
+<div class="quiz-card">
+    <div id="quiz-ui">
+        <div class="progress" id="progress-text">Вопрос 1 из 10</div>
+        <div id="question-container">
+            <span class="question-text" id="q-text">Загрузка задания...</span>
+            <ul class="options" id="options-list"></ul>
+        </div>
+        
+        <div class="hint-box" id="hint-display"></div>
+
+        <div class="controls">
+            <button class="btn-answer" id="answer-btn" onclick="submitAnswer()">Ответить</button>
+            <button class="btn-next" id="next-btn" onclick="nextQuestion()">Далее →</button>
+        </div>
+    </div>
+
+    <div id="final-screen">
+        <h2>Тема «Окружность» завершена</h2>
+        <div class="score-circle" id="final-score">0 / 10</div>
+        <p id="final-msg"></p>
+        <button class="btn-answer" onclick="location.reload()">Начать заново</button>
+    </div>
+</div>
+
+<script>
+    const quizData = [
+        { 
+            q: "1. Две хорды AB и CD пересекаются в точке M. Известно, что AM=4, MB=9, CM=6. Найдите отрезок MD.", 
+            a: ["4", "6", "9", "5"], 
+            cor: 1, 
+            h: "Примените свойство пересекающихся хорд: \\( AM \\cdot MB = CM \\cdot MD \\). Подставьте значения: \\( 4 \\cdot 9 = 6 \\cdot MD \\)." 
+        },
+        { 
+            q: "2. Из точки за пределами окружности проведены касательная и секущая. Отрезок касательной равен 6, а внешняя часть секущей — 4. Найдите всю секущую.", 
+            a: ["9", "10", "8", "12"], 
+            cor: 0, 
+            h: "Свойство касательной и секущей: квадрат касательной равен произведению всей секущей на её внешнюю часть: \\( 6^2 = x \\cdot 4 \\)." 
+        },
+        { 
+            q: "3. Угол между касательной и хордой, проведенной через точку касания, равен 50°. Найдите градусную меру дуги, заключенной внутри этого угла.", 
+            a: ["50°", "25°", "100°", "150°"], 
+            cor: 2, 
+            h: "Угол между касательной и хордой равен половине дуги, которую он заключает. Значит, дуга в 2 раза больше угла." 
+        },
+        { 
+            q: "4. В окружности проведены две секущие из одной точки. Отрезки первой: внешняя — 3, внутренняя — 5. Внешняя часть второй секущей — 2. Найдите всю вторую секущую.", 
+            a: ["10", "12", "15", "8"], 
+            cor: 1, 
+            h: "Свойство секущих: произведение всей первой секущей (3+5=8) на внешнюю часть (3) равно произведению всей второй (x) на её внешнюю часть (2). \\( 8 \\cdot 3 = x \\cdot 2 \\)." 
+        },
+        { 
+            q: "5. Центральный угол опирается на дугу 80°. Чему равен вписанный угол, опирающийся на ту же дугу?", 
+            a: ["80°", "160°", "40°", "90°"], 
+            cor: 2, 
+            h: "Вписанный угол равен половине центрального угла, если они опираются на одну и ту же дугу." 
+        },
+        { 
+            q: "6. Хорды пересекаются так, что одна делится на отрезки 8 и 3, а вторая — на 4 и x. Найдите x.", 
+            a: ["4", "5", "6", "2"], 
+            cor: 2, 
+            h: "Используйте формулу: \\( a \\cdot b = c \\cdot d \\). То есть \\( 8 \\cdot 3 = 4 \\cdot x \\)." 
+        },
+        { 
+            q: "7. Касательная AB касается окружности в точке B. AC — секущая, проходящая через центр. AB=12, внешняя часть секущей 8. Найдите радиус окружности.", 
+            a: ["5", "10", "4", "2,5"], 
+            cor: 0, 
+            h: "Квадрат касательной \\( 12^2 = 144 \\). Вся секущая \\( 144 / 8 = 18 \\). Диаметр равен \\( 18 - 8 = 10 \\). Радиус — половина диаметра." 
+        },
+        { 
+            q: "8. Вписанный угол равен 35°. Найдите дугу, на которую он опирается.", 
+            a: ["35°", "70°", "17,5°", "145°"], 
+            cor: 1, 
+            h: "Вписанный угол измеряется половиной дуги, на которую он опирается. Значит, дуга в два раза больше угла." 
+        },
+        { 
+            q: "9. Угол между двумя секущими, пересекающимися вне окружности, равен 30°. Одна из дуг между ними равна 100°. Найдите вторую (меньшую) дугу.", 
+            a: ["40°", "70°", "30°", "50°"], 
+            cor: 0, 
+            h: "Угол между секущими равен полуразности дуг: \\( 30 = (100 - x) / 2 \\). Отсюда \\( 60 = 100 - x \\)." 
+        },
+        { 
+            q: "10. Вписанный угол, опирающийся на диаметр окружности, всегда равен:", 
+            a: ["45°", "180°", "60°", "90°"], 
+            cor: 3, 
+            h: "Диаметр стягивает дугу 180°. Вписанный угол равен половине этой дуги, то есть 90°." 
+        }
+    ];
+
+    let currentIdx = 0;
+    let score = 0;
+
+    function renderQuestion() {
+        const item = quizData[currentIdx];
+        document.getElementById('progress-text').innerText = `Вопрос ${currentIdx + 1} из ${quizData.length}`;
+        document.getElementById('q-text').innerText = item.q;
+        
+        const list = document.getElementById('options-list');
+        list.innerHTML = '';
+        
+        item.a.forEach((text, i) => {
+            const li = document.createElement('li');
+            li.innerHTML = `<input type="radio" name="answer" value="${i}" id="opt${i}"><label for="opt${i}">${text}</label>`;
+            li.onclick = () => { if(document.getElementById('answer-btn').style.display !== 'none') document.getElementById(`opt${i}`).checked = true; };
+            list.appendChild(li);
+        });
+
+        document.getElementById('hint-display').style.display = 'none';
+        document.getElementById('answer-btn').style.display = 'block';
+        document.getElementById('next-btn').style.display = 'none';
+        
+        MathJax.typeset();
+    }
+
+    function submitAnswer() {
+        const selected = document.querySelector('input[name="answer"]:checked');
+        if (!selected) return alert("Пожалуйста, выберите ответ!");
+
+        const userAns = parseInt(selected.value);
+        const correctAns = quizData[currentIdx].cor;
+        const options = document.querySelectorAll('.options li');
+
+        if (userAns === correctAns) {
+            score++;
+            options[userAns].classList.add('selected-correct');
+        } else {
+            options[userAns].classList.add('selected-wrong');
+            const hint = document.getElementById('hint-display');
+            hint.innerHTML = `<strong>Подсказка для учителя и ученика:</strong> ${quizData[currentIdx].h}`;
+            hint.style.display = 'block';
+        }
+
+        document.getElementById('answer-btn').style.display = 'none';
+        document.getElementById('next-btn').style.display = 'block';
+        MathJax.typeset();
+    }
+
+    function nextQuestion() {
+        currentIdx++;
+        if (currentIdx < quizData.length) {
+            renderQuestion();
+        } else {
+            showFinal();
+        }
+    }
+
+    function showFinal() {
+        document.getElementById('quiz-ui').style.display = 'none';
+        const screen = document.getElementById('final-screen');
+        screen.style.display = 'block';
+        document.getElementById('final-score').innerText = `${score} / ${quizData.length}`;
+        
+        let msg = score >= 8 ? "Отличные знания свойств окружности!" : score >= 5 ? "Хороший результат, но повторите свойства секущих." : "Тема требует дополнительного изучения.";
+        document.getElementById('final-msg').innerText = msg;
+    }
+
+    renderQuestion();
+</script>
+
+</body>
+</html>
